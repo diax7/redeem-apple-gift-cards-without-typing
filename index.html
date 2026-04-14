@@ -6,6 +6,7 @@
 <title>Redeem Apple Gift Cards Without Typing</title>
 <meta name="description" content="Generate scannable Apple gift card images so you can redeem codes with your iPhone or iPad camera instead of typing them." />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%81%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;500&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -21,11 +22,6 @@
       <p class="subtitle">Generate scannable codes you can redeem with your iPhone or iPad camera.</p>
     </header>
 
-    <section class="test-banner" role="note">
-      <strong>Testing mode.</strong>
-      We&rsquo;re still calibrating the scan box so Apple&rsquo;s camera recognises it. Every code you paste renders as <strong>five variants (V1&ndash;V5)</strong>, each using a different combination of box ratio, font size, and rendering method. Please scan each variant with your iPhone or iPad and note which one triggers the camera scanner so we can lock it in.
-    </section>
-
     <section class="input-card">
       <label for="codesInput" class="input-label">Gift card codes</label>
       <textarea
@@ -37,7 +33,7 @@
         autocapitalize="characters"
         autocomplete="off"
       ></textarea>
-      <p class="helper-text">Enter 16-character codes. Spaces and dashes are fine — we clean them up.</p>
+      <p class="helper-text">Enter 16-character codes. Spaces and dashes are fine &mdash; we clean them up.</p>
       <div class="input-actions">
         <button type="button" class="btn-primary" id="generateBtn" disabled>Generate</button>
         <button type="button" class="btn-text" id="clearBtn" hidden>Clear all</button>
@@ -47,13 +43,13 @@
 
     <section class="cards-area" id="cardsArea" aria-live="polite"></section>
 
-    <section class="instructions" id="instructions">
+    <section class="instructions">
       <h2 class="instructions-title">How to use it</h2>
       <ol class="instructions-list">
         <li>Paste one or more Apple gift card codes above and press <strong>Generate</strong>.</li>
         <li>On your iPhone or iPad, open the App Store, tap your profile picture, then <strong>Redeem Gift Card or Code</strong>.</li>
-        <li>Choose <strong>Use Camera</strong> and point it at a scannable box on this screen, about 4–7 inches (10–18 cm) away.</li>
-        <li>The code is recognized instantly — no typing.</li>
+        <li>Choose <strong>Use Camera</strong> and point it at a scannable box on this screen, about 4&ndash;7 inches (10&ndash;18&nbsp;cm) away.</li>
+        <li>The code is recognized instantly &mdash; no typing.</li>
       </ol>
     </section>
 
@@ -65,7 +61,9 @@
       <p>All processing happens in your browser. No data is sent anywhere.</p>
       <p>
         Research credit:
-        <a href="https://blog.equinux.com/2017/07/cracking-the-code-behind-apples-app-store-promo-card-design/" target="_blank" rel="noopener">Equinux — Cracking the code behind Apple's promo card design</a>
+        <a href="https://blog.equinux.com/2017/07/cracking-the-code-behind-apples-app-store-promo-card-design/" target="_blank" rel="noopener">Equinux &mdash; Cracking the code behind Apple's promo card design</a>
+        &middot;
+        <a href="https://github.com/hughmandeville/homekit_code" target="_blank" rel="noopener">hughmandeville/homekit_code</a>
       </p>
       <p>
         Built by
