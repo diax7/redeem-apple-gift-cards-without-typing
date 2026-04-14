@@ -2,7 +2,7 @@
 
 A tiny website that turns Apple gift card codes you received by email into images your iPhone or iPad camera can scan — so you never have to type a 16‑character code again.
 
-**Live site:** *(set up GitHub Pages and the URL appears here — typically `https://<your-user>.github.io/<repo>/`)*
+**Live site:** <https://diax7.github.io/redeem-apple-gift-cards-without-typing/>
 
 ## The problem
 
