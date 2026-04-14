@@ -125,157 +125,254 @@ function drawCenteredText(ctx, code, fontSize, cx, cy) {
 // Each variant returns an HTMLElement (canvas or SVG) that represents one
 // take on what a scannable Apple gift card box should look like.
 
-// V1 — CANONICAL 3:1 BOX WITH DYNAMIC FONT FIT
-// 3:1 box, 0.045 border, fillRect frame. Font starts at Equinux's
-// 0.34 × H maximum and shrinks only if 16 characters would overflow,
-// targeting 88% of interior width.
-function drawV1(code) {
-  const H = BOX_HEIGHT;
-  const W = H * 3;
-  const border = Math.round(H * 0.045);
-  const interior = W - 2 * border;
+// Builds a bare SVG scan box with fill="none" outline, Apple's exact font,
+// and optional per-character positioning. Mirrors finnvoor's proven approach
+// for 12-char promo codes, extended for 16-char gift cards.
+function buildSvgBox({ boxRatio, perCharPositioning, H = BOX_HEIGHT }) {
+  return (code) => {
+    const W = H * boxRatio;
+    const border = H * 0.045;
+    const fontSize = H * 0.34;
 
-  const maxFontSize = H * 0.34;
-  const targetWidth = interior * 0.88;
-  const raw = measureAt(code, maxFontSize);
-  const fontSize = raw > targetWidth ? maxFontSize * (targetWidth / raw) : maxFontSize;
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('class', 'scan-box');
+    svg.setAttribute('xmlns', ns);
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', H);
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
 
-  const { canvas, ctx } = makeCanvas(W, H);
-  fillFrame(ctx, W, H, border);
-  drawCenteredText(ctx, code, fontSize, W / 2, H / 2);
-  return canvas;
+    // Solid white background rectangle — matches finnvoor's working SVG
+    // (they used a white JPEG at 400×400 behind everything).
+    const bg = document.createElementNS(ns, 'rect');
+    bg.setAttribute('width', W);
+    bg.setAttribute('height', H);
+    bg.setAttribute('fill', '#ffffff');
+    svg.appendChild(bg);
+
+    // Box outline — stroke only, fill="none" just like finnvoor's solution.
+    // stroke-linejoin="round" matches the exact attributes finnvoor uses.
+    const box = document.createElementNS(ns, 'path');
+    const x1 = border / 2;
+    const y1 = H - border / 2;
+    const x2 = W - border / 2;
+    const y2 = border / 2;
+    box.setAttribute('d', `M${x1} ${y1} L${x2} ${y1} ${x2} ${y2} ${x1} ${y2} Z`);
+    box.setAttribute('fill', 'none');
+    box.setAttribute('stroke', '#000000');
+    box.setAttribute('stroke-width', border);
+    box.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(box);
+
+    if (perCharPositioning) {
+      // Per-character uniform spacing, scaled from finnvoor's 12-char layout.
+      // finnvoor: 12 chars over ~288 units in a 126.5-unit box = 0.19 H per step.
+      // For 16 chars, we want 15 intervals across the interior with padding.
+      const N = code.length;
+      // Match finnvoor's padding ratio: ~33 of 380 = 8.7% of box width each side.
+      const sidePadding = W * 0.087;
+      const available = W - 2 * sidePadding;
+      const step = available / (N - 1);
+      const startX = sidePadding;
+
+      const text = document.createElementNS(ns, 'text');
+      text.setAttribute('y', H / 2 + fontSize * 0.33);
+      text.setAttribute('font-family', '"Scancardium", "Scancardium", monospace');
+      text.setAttribute('font-size', fontSize);
+      text.setAttribute('fill', '#000000');
+      text.setAttribute('text-anchor', 'middle');
+
+      for (let i = 0; i < N; i++) {
+        const tspan = document.createElementNS(ns, 'tspan');
+        tspan.setAttribute('x', startX + i * step);
+        tspan.textContent = code[i];
+        text.appendChild(tspan);
+      }
+      svg.appendChild(text);
+    } else {
+      // Natural text flow with text-anchor center.
+      const text = document.createElementNS(ns, 'text');
+      text.setAttribute('x', W / 2);
+      text.setAttribute('y', H / 2 + fontSize * 0.33);
+      text.setAttribute('font-family', '"Scancardium", "Scancardium", monospace');
+      text.setAttribute('font-size', fontSize);
+      text.setAttribute('fill', '#000000');
+      text.setAttribute('text-anchor', 'middle');
+      text.textContent = code;
+      svg.appendChild(text);
+    }
+
+    return svg;
+  };
 }
 
-// V2 — STRICT 0.34 FONT, SVG WITH textLength COMPRESSION
-// Keeps the box exactly 3:1 AND the font size exactly 0.34 × H, using
-// SVG's textLength/lengthAdjust="spacingAndGlyphs" to squeeze the 16
-// characters to fit inside the interior. This is the only variant that
-// preserves ALL Equinux ratios simultaneously.
-function drawV2(code) {
-  const H = BOX_HEIGHT;
-  const W = H * 3;
-  const border = Math.round(H * 0.045);
-  const fontSize = H * 0.34;
-  const interior = W - 2 * border;
-  const textLength = interior * 0.90;
+// V1 — 4:1 box with natural text flow
+// If box-ratio scales linearly with character count (finnvoor's 3:1 for 12
+// chars → 3/12 × 16 = 4 for 16 chars), this is the correct gift-card box.
+const drawV1 = buildSvgBox({ boxRatio: 4.0, perCharPositioning: false });
 
+// V2 — 4:1 box with per-character uniform positioning
+// Same 4:1 ratio as V1 but uses finnvoor-style explicit tspan positioning
+// for each character so glyph advances are overridden by uniform spacing.
+const drawV2 = buildSvgBox({ boxRatio: 4.0, perCharPositioning: true });
+
+// V3 — 3.797:1 box (Apple's internal frameRatio from CRBoxLayer.m)
+// The exact magic number Apple uses when initialising the scanner reticle
+// for iTunes codes. Slightly narrower than 4:1.
+const drawV3 = buildSvgBox({ boxRatio: 3.79710145, perCharPositioning: false });
+
+// V4 — 3.797:1 box with per-character positioning
+// Apple's reticle ratio plus finnvoor's uniform character spacing approach.
+const drawV4 = buildSvgBox({ boxRatio: 3.79710145, perCharPositioning: true });
+
+// V5 — 4:1 box inside a minimalist Apple gift card mockup
+// Surrounds the scan box with the visual elements of a real Apple gift card
+// (Apple logo, "Gift Card" title, serial number below) so the scanner's
+// ML model sees the card context it's trained to recognise.
+function drawV5(code) {
+  const cardW = 900;
+  const cardH = 1100;
   const ns = 'http://www.w3.org/2000/svg';
+
   const svg = document.createElementNS(ns, 'svg');
   svg.setAttribute('class', 'scan-box');
   svg.setAttribute('xmlns', ns);
-  svg.setAttribute('width', W);
-  svg.setAttribute('height', H);
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', cardW);
+  svg.setAttribute('height', cardH);
+  svg.setAttribute('viewBox', `0 0 ${cardW} ${cardH}`);
 
-  const outer = document.createElementNS(ns, 'rect');
-  outer.setAttribute('width', W);
-  outer.setAttribute('height', H);
-  outer.setAttribute('fill', '#000000');
-  svg.appendChild(outer);
+  // Card background — white with rounded corners.
+  const bg = document.createElementNS(ns, 'rect');
+  bg.setAttribute('width', cardW);
+  bg.setAttribute('height', cardH);
+  bg.setAttribute('rx', 32);
+  bg.setAttribute('fill', '#ffffff');
+  svg.appendChild(bg);
 
-  const inner = document.createElementNS(ns, 'rect');
-  inner.setAttribute('x', border);
-  inner.setAttribute('y', border);
-  inner.setAttribute('width', W - 2 * border);
-  inner.setAttribute('height', H - 2 * border);
-  inner.setAttribute('fill', '#ffffff');
-  svg.appendChild(inner);
+  // Apple logo at top centre.
+  const apple = document.createElementNS(ns, 'path');
+  apple.setAttribute('transform', `translate(${cardW / 2 - 36}, 110) scale(3)`);
+  apple.setAttribute('d', 'M17.05 20.28c-.98.95-2.05.88-3.08.41-1.09-.47-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.41C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z');
+  apple.setAttribute('fill', '#1d1d1f');
+  svg.appendChild(apple);
+
+  // "Gift Card" title.
+  const title = document.createElementNS(ns, 'text');
+  title.setAttribute('x', cardW / 2);
+  title.setAttribute('y', 250);
+  title.setAttribute('font-family', '-apple-system, BlinkMacSystemFont, "SF Pro Display", Helvetica, Arial, sans-serif');
+  title.setAttribute('font-size', 64);
+  title.setAttribute('font-weight', 600);
+  title.setAttribute('fill', '#1d1d1f');
+  title.setAttribute('text-anchor', 'middle');
+  title.textContent = 'Gift Card';
+  svg.appendChild(title);
+
+  // "For all things Apple" subtitle.
+  const subtitle = document.createElementNS(ns, 'text');
+  subtitle.setAttribute('x', cardW / 2);
+  subtitle.setAttribute('y', 310);
+  subtitle.setAttribute('font-family', '-apple-system, BlinkMacSystemFont, sans-serif');
+  subtitle.setAttribute('font-size', 32);
+  subtitle.setAttribute('fill', '#1d1d1f');
+  subtitle.setAttribute('text-anchor', 'middle');
+  subtitle.textContent = 'For all things Apple';
+  svg.appendChild(subtitle);
+
+  // Body text above the scan box.
+  const body1 = document.createElementNS(ns, 'text');
+  body1.setAttribute('x', cardW / 2);
+  body1.setAttribute('y', 480);
+  body1.setAttribute('font-family', '-apple-system, sans-serif');
+  body1.setAttribute('font-size', 22);
+  body1.setAttribute('fill', '#1d1d1f');
+  body1.setAttribute('text-anchor', 'middle');
+  body1.textContent = 'Use this card at any Apple Store. For online purchases,';
+  svg.appendChild(body1);
+
+  const body2 = document.createElementNS(ns, 'text');
+  body2.setAttribute('x', cardW / 2);
+  body2.setAttribute('y', 512);
+  body2.setAttribute('font-family', '-apple-system, sans-serif');
+  body2.setAttribute('font-size', 22);
+  body2.setAttribute('fill', '#1d1d1f');
+  body2.setAttribute('text-anchor', 'middle');
+  body2.textContent = 'go to apple.com/redeem to add to your account.';
+  svg.appendChild(body2);
+
+  // The scan box itself — 4:1 ratio, exactly centred.
+  const boxH = 140;
+  const boxW = boxH * 4;
+  const border = boxH * 0.045;
+  const boxX = (cardW - boxW) / 2;
+  const boxY = 600;
+  const fontSize = boxH * 0.34;
+
+  const box = document.createElementNS(ns, 'path');
+  const x1 = boxX + border / 2;
+  const y1 = boxY + boxH - border / 2;
+  const x2 = boxX + boxW - border / 2;
+  const y2 = boxY + border / 2;
+  box.setAttribute('d', `M${x1} ${y1} L${x2} ${y1} ${x2} ${y2} ${x1} ${y2} Z`);
+  box.setAttribute('fill', 'none');
+  box.setAttribute('stroke', '#000000');
+  box.setAttribute('stroke-width', border);
+  box.setAttribute('stroke-linejoin', 'round');
+  svg.appendChild(box);
 
   const text = document.createElementNS(ns, 'text');
-  text.setAttribute('x', W / 2);
-  text.setAttribute('y', H / 2);
-  text.setAttribute('font-family', '"Scancardium", monospace');
+  text.setAttribute('x', cardW / 2);
+  text.setAttribute('y', boxY + boxH / 2 + fontSize * 0.33);
+  text.setAttribute('font-family', '"Scancardium", "Scancardium", monospace');
   text.setAttribute('font-size', fontSize);
   text.setAttribute('fill', '#000000');
   text.setAttribute('text-anchor', 'middle');
-  text.setAttribute('dominant-baseline', 'central');
-  text.setAttribute('textLength', textLength);
-  text.setAttribute('lengthAdjust', 'spacingAndGlyphs');
   text.textContent = code;
   svg.appendChild(text);
 
+  // Serial number below the box — real gift cards show GCA###...
+  const serial = document.createElementNS(ns, 'text');
+  serial.setAttribute('x', cardW / 2);
+  serial.setAttribute('y', boxY + boxH + 50);
+  serial.setAttribute('font-family', '-apple-system, sans-serif');
+  serial.setAttribute('font-size', 18);
+  serial.setAttribute('fill', '#1d1d1f');
+  serial.setAttribute('text-anchor', 'middle');
+  serial.textContent = 'GCA' + Array.from({ length: 13 }, () => Math.floor(Math.random() * 10)).join('');
+  svg.appendChild(serial);
+
   return svg;
-}
-
-// V3 — STRICT 0.34 FONT, WIDER BOX (NOT 3:1)
-// Preserves the 0.34 × H font-size exactly, but lets the box be wider than
-// 3:1 so the text fits with natural character spacing. Sacrifices the 3:1
-// box ratio to keep the font ratio.
-function drawV3(code) {
-  const H = BOX_HEIGHT;
-  const fontSize = H * 0.34;
-  const textWidth = measureAt(code, fontSize);
-  const border = Math.round(H * 0.045);
-  // Pad interior so text sits at ~88% fill.
-  const interior = Math.ceil(textWidth / 0.88);
-  const W = interior + 2 * border;
-
-  const { canvas, ctx } = makeCanvas(W, H);
-  fillFrame(ctx, W, H, border);
-  drawCenteredText(ctx, code, fontSize, W / 2, H / 2);
-  return canvas;
-}
-
-// V4 — 3:1 BOX, 0.30 FONT (compromise ratio)
-// Middle ground between Equinux's 0.34 and what my Scancardium file
-// naturally fits. The box is strictly 3:1 with natural character spacing.
-function drawV4(code) {
-  const H = BOX_HEIGHT;
-  const W = H * 3;
-  const border = Math.round(H * 0.045);
-  const fontSize = H * 0.30;
-
-  const { canvas, ctx } = makeCanvas(W, H);
-  fillFrame(ctx, W, H, border);
-  drawCenteredText(ctx, code, fontSize, W / 2, H / 2);
-  return canvas;
-}
-
-// V5 — 3:1 BOX, 0.26 FONT (matches real card photos)
-// This ratio is what the scan boxes on actual Apple gift card photos look
-// like — 16 characters span roughly 85% of the interior with clear padding
-// on both sides. Smallest text of the five variants.
-function drawV5(code) {
-  const H = BOX_HEIGHT;
-  const W = H * 3;
-  const border = Math.round(H * 0.045);
-  const fontSize = H * 0.26;
-
-  const { canvas, ctx } = makeCanvas(W, H);
-  fillFrame(ctx, W, H, border);
-  drawCenteredText(ctx, code, fontSize, W / 2, H / 2);
-  return canvas;
 }
 
 const VARIANTS = [
   {
     id: 'V1',
-    name: 'Dynamic fit',
-    desc: '3:1 box · font shrunk to fit 88% of interior',
+    name: '4:1 box, natural text',
+    desc: 'Box-ratio scaled for 16 chars (4:1) · font 0.34 × H · natural text flow',
     render: drawV1,
   },
   {
     id: 'V2',
-    name: 'Strict 0.34, SVG squeeze',
-    desc: '3:1 box · font-size exactly 0.34 × H · characters squeezed via SVG textLength',
+    name: '4:1 box, per-char positioning',
+    desc: '4:1 box · per-character uniform spacing (finnvoor-style)',
     render: drawV2,
   },
   {
     id: 'V3',
-    name: 'Strict 0.34, wide box',
-    desc: 'Font-size 0.34 × H · box wider than 3:1 to fit text',
+    name: "3.797:1 box (Apple's frameRatio)",
+    desc: 'Apple\u2019s exact internal frameRatio from CRBoxLayer.m · natural text',
     render: drawV3,
   },
   {
     id: 'V4',
-    name: '0.30 ratio',
-    desc: '3:1 box · font-size 0.30 × H',
+    name: '3.797:1 box, per-char positioning',
+    desc: 'Apple\u2019s frameRatio · per-character uniform spacing',
     render: drawV4,
   },
   {
     id: 'V5',
-    name: '0.26 ratio',
-    desc: '3:1 box · font-size 0.26 × H · matches real Apple card photos',
+    name: 'Full gift card mockup',
+    desc: '4:1 scan box inside a minimalist Apple gift card (logo, title, serial) so the ML model sees card context',
     render: drawV5,
   },
 ];
