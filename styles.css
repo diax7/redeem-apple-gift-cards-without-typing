@@ -56,11 +56,15 @@ body {
 }
 
 .title {
-  font-size: 40px;
+  font-size: 44px;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.08;
   letter-spacing: -0.02em;
-  margin: 0 0 12px;
+  margin: 0 0 14px;
+}
+
+.title span {
+  display: block;
 }
 
 .subtitle {
@@ -231,41 +235,18 @@ body {
   color: var(--error);
 }
 
-/* The scannable box — EXACT PROPORTIONS from the Equinux reverse-engineering.
-   These ratios are what triggers Apple's CoreRecognition OCR. Do not alter. */
+/* The scannable box is drawn on a <canvas> element at exact pixel dimensions,
+   following the Equinux proportions (3:1, border 0.045, font-size 0.34).
+   Canvas gives pixel-perfect control — no CSS variables or font fallback
+   surprises. On mobile the canvas scales down proportionally via max-width. */
 .scan-box {
-  --box-height: 170px;
-  width: calc(var(--box-height) * 3);
-  height: var(--box-height);
-  background: #ffffff;
-  border: calc(var(--box-height) * 0.045) solid #000000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   margin: 0 auto;
-  box-sizing: border-box;
-}
-
-.scan-code {
-  font-family: 'Scancardium', 'Courier New', monospace;
-  /* 0.34 × box-height, applied directly as CSS font-size per the Equinux spec
-     (not cap-height). At this size, 16 Scancardium glyphs naturally span the
-     3:1 box width — the number is chosen to make the math work out. */
-  font-size: calc(var(--box-height) * 0.34);
-  color: #000000;
-  line-height: 1;
-  letter-spacing: 0;
-  white-space: nowrap;
-  user-select: none;
-  font-weight: 400;
-  font-feature-settings: normal;
-  -webkit-font-smoothing: auto;
-}
-
-@media (max-width: 520px) {
-  .scan-box {
-    --box-height: 115px;
-  }
+  max-width: 100%;
+  height: auto;
+  /* Keep the browser from smoothing the scaled-down bitmap too aggressively */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 .card-footer {
@@ -351,7 +332,17 @@ body {
 }
 
 .footer p {
-  margin: 4px 0;
+  margin: 8px 0;
+}
+
+.disclaimer {
+  max-width: 520px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  font-size: 12px;
+  color: #9a9aa1;
+  line-height: 1.5;
+  margin-bottom: 14px !important;
 }
 
 .footer a {
