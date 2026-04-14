@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Redeem Apple Gift Cards Without Typing</title>
+<meta name="description" content="Generate scannable Apple gift card images so you can redeem codes with your iPad camera instead of typing them." />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <svg class="apple-logo" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.88-3.08.41-1.09-.47-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.41C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+      </svg>
+      <h1 class="title">Redeem Apple Gift Cards Without Typing</h1>
+      <p class="subtitle">Generate scannable codes for quick camera redemption.</p>
+    </header>
+
+    <section class="font-status" id="fontStatus" aria-live="polite">
+      <div class="status-dot" id="statusDot"></div>
+      <div class="status-text">
+        <span id="statusText">Loading Scancardium font…</span>
+        <span class="status-sub" id="statusSub">The scanner only recognizes this specific font.</span>
+      </div>
+      <div class="status-action" id="statusAction" hidden>
+        <label class="upload-button">
+          Upload .ttf
+          <input type="file" id="fontUpload" accept=".ttf,.otf,font/ttf,font/otf" hidden />
+        </label>
+        <a class="status-link" href="https://github.com/hughmandeville/homekit_code/tree/master/fonts" target="_blank" rel="noopener">Download font</a>
+      </div>
+    </section>
+
+    <section class="input-card">
+      <label for="codesInput" class="input-label">Gift card codes</label>
+      <textarea
+        id="codesInput"
+        class="codes-input"
+        rows="4"
+        placeholder="Paste your gift card codes here, one per line&#10;e.g. XXVP9XZYFMQMR2X8"
+        spellcheck="false"
+        autocapitalize="characters"
+        autocomplete="off"
+      ></textarea>
+      <p class="helper-text">Enter 16-character codes. Spaces and dashes are fine — we clean them up.</p>
+      <div class="input-actions">
+        <button type="button" class="btn-primary" id="generateBtn" disabled>Generate</button>
+        <button type="button" class="btn-text" id="clearBtn" hidden>Clear all</button>
+      </div>
+      <p class="validation-error" id="validationError" hidden></p>
+    </section>
+
+    <section class="cards-area" id="cardsArea" aria-live="polite"></section>
+
+    <section class="instructions" id="instructions">
+      <h2 class="instructions-title">How to use it</h2>
+      <ol class="instructions-list">
+        <li>Paste one or more Apple gift card codes above and press <strong>Generate</strong>.</li>
+        <li>On your iPhone or iPad, open the App Store, tap your profile, then <strong>Redeem Gift Card or Code</strong>.</li>
+        <li>Choose <strong>Use Camera</strong> and point it at a scannable box on this screen, 4–7 inches away.</li>
+        <li>The code is recognized instantly — no typing.</li>
+      </ol>
+    </section>
+
+    <footer class="footer">
+      <p>All processing happens in your browser. No data is sent anywhere.</p>
+      <p>
+        Research credit:
+        <a href="https://blog.equinux.com/2017/07/cracking-the-code-behind-apples-app-store-promo-card-design/" target="_blank" rel="noopener">Equinux — Cracking the code behind Apple's promo card design</a>
+      </p>
+    </footer>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
