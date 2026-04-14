@@ -74,6 +74,88 @@ body {
   font-weight: 400;
 }
 
+/* Test banner */
+.test-banner {
+  background: #fff8e6;
+  border: 1px solid #f4d98a;
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #6b4c00;
+}
+.test-banner strong {
+  color: #4a3500;
+}
+
+/* Variant groups */
+.variant-group {
+  margin-bottom: 40px;
+}
+.variant-group-header {
+  margin-bottom: 14px;
+  padding: 0 4px;
+}
+.variant-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.variant-group-code {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text);
+}
+.variant-group-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.variant-card {
+  margin-bottom: 16px !important;
+}
+.variant-card .card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.variant-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  padding: 4px 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+.variant-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.variant-desc {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.scan-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 4px;
+  overflow-x: auto;
+}
+
 /* Input card */
 .input-card {
   background: var(--card);
