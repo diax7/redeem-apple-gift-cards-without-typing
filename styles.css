@@ -70,97 +70,6 @@ body {
   font-weight: 400;
 }
 
-/* Font status */
-.font-status {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 18px 24px;
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 24px;
-  transition: all 0.2s ease;
-}
-
-.status-dot {
-  flex-shrink: 0;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--text-secondary);
-  position: relative;
-}
-
-.font-status.loading .status-dot {
-  background: var(--text-secondary);
-  animation: pulse 1.4s ease-in-out infinite;
-}
-
-.font-status.ready .status-dot {
-  background: var(--success);
-}
-
-.font-status.error .status-dot {
-  background: var(--error);
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
-.status-text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-#statusText {
-  font-weight: 500;
-  font-size: 15px;
-}
-
-.status-sub {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.status-action {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.upload-button {
-  display: inline-block;
-  padding: 8px 16px;
-  background: var(--accent);
-  color: white;
-  border-radius: 980px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.upload-button:hover {
-  background: var(--accent-hover);
-}
-
-.status-link {
-  font-size: 14px;
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.status-link:hover {
-  text-decoration: underline;
-}
-
 /* Input card */
 .input-card {
   background: var(--card);
@@ -322,10 +231,10 @@ body {
   color: var(--error);
 }
 
-/* The scannable box — EXACT PROPORTIONS REQUIRED */
-/* Box height = 140px → width 420px, border 6.3px, font 47.6px */
+/* The scannable box — EXACT PROPORTIONS from the Equinux reverse-engineering.
+   These ratios are what triggers Apple's CoreRecognition OCR. Do not alter. */
 .scan-box {
-  --box-height: 140px;
+  --box-height: 170px;
   width: calc(var(--box-height) * 3);
   height: var(--box-height);
   background: #ffffff;
@@ -335,22 +244,27 @@ body {
   justify-content: center;
   margin: 0 auto;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 .scan-code {
-  font-family: 'Scancardium', monospace;
-  font-size: calc(var(--box-height) * 0.48);
+  font-family: 'Scancardium', 'Courier New', monospace;
+  /* 0.34 × box-height, applied directly as CSS font-size per the Equinux spec
+     (not cap-height). At this size, 16 Scancardium glyphs naturally span the
+     3:1 box width — the number is chosen to make the math work out. */
+  font-size: calc(var(--box-height) * 0.34);
   color: #000000;
   line-height: 1;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
   white-space: nowrap;
   user-select: none;
+  font-weight: 400;
+  font-feature-settings: normal;
+  -webkit-font-smoothing: auto;
 }
 
 @media (max-width: 520px) {
   .scan-box {
-    --box-height: 110px;
+    --box-height: 115px;
   }
 }
 
@@ -479,5 +393,4 @@ body {
   .title { font-size: 30px; }
   .subtitle { font-size: 17px; }
   .input-card, .gift-card, .instructions { padding: 24px; }
-  .font-status { flex-wrap: wrap; }
 }

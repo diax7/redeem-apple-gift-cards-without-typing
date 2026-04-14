@@ -9,11 +9,6 @@ const state = {
 };
 
 const el = {
-  status: document.getElementById('fontStatus'),
-  statusText: document.getElementById('statusText'),
-  statusSub: document.getElementById('statusSub'),
-  statusAction: document.getElementById('statusAction'),
-  fontUpload: document.getElementById('fontUpload'),
   codesInput: document.getElementById('codesInput'),
   generateBtn: document.getElementById('generateBtn'),
   clearBtn: document.getElementById('clearBtn'),
@@ -23,61 +18,31 @@ const el = {
 };
 
 // ---------- Font loading ----------
-
+// The Scancardium font ships with the site in fonts/. We still load it via the
+// FontFace API (rather than pure @font-face CSS) so we can reliably wait for it
+// to be ready before enabling card generation — if we rendered cards before the
+// font was parsed, the browser would briefly fall back to a system font and
+// Apple's OCR scanner would not recognize those characters.
 async function loadScancardium() {
-  setStatus('loading', 'Loading Scancardium font…', 'The scanner only recognizes this specific font.');
-
   try {
     const face = new FontFace('Scancardium', `url(${FONT_URL})`, { style: 'normal', weight: '400' });
     const loaded = await face.load();
     document.fonts.add(loaded);
     state.fontReady = true;
-    setStatus('ready', 'Scancardium font loaded', 'You can now generate scannable cards.');
     el.generateBtn.disabled = false;
   } catch (err) {
-    // Remote/local fetch failed — fall back to manual upload.
-    console.warn('Font load failed:', err);
-    setStatus(
-      'error',
-      'Couldn\u2019t load Scancardium automatically',
-      'Please upload the Scancardium_2.0.ttf file to continue.'
-    );
-    el.statusAction.hidden = false;
+    // This should never happen in practice because the font is local.
+    // If it does, surface a clear inline error so the user knows why nothing works.
+    console.error('Scancardium failed to load:', err);
+    el.validationError.hidden = false;
+    el.validationError.textContent =
+      'Couldn\u2019t load the Scancardium font. Please reload the page.';
   }
 }
-
-function setStatus(kind, text, sub) {
-  el.status.classList.remove('loading', 'ready', 'error');
-  el.status.classList.add(kind);
-  el.statusText.textContent = text;
-  el.statusSub.textContent = sub;
-}
-
-// Load font from a user-supplied file (fallback path).
-el.fontUpload.addEventListener('change', async (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  setStatus('loading', 'Loading uploaded font…', file.name);
-
-  try {
-    const buffer = await file.arrayBuffer();
-    const face = new FontFace('Scancardium', buffer, { style: 'normal', weight: '400' });
-    const loaded = await face.load();
-    document.fonts.add(loaded);
-    state.fontReady = true;
-    setStatus('ready', 'Scancardium font loaded', 'You can now generate scannable cards.');
-    el.statusAction.hidden = true;
-    el.generateBtn.disabled = false;
-  } catch (err) {
-    console.error('Uploaded font failed to load:', err);
-    setStatus('error', 'That file isn\u2019t a valid font', 'Please upload the Scancardium_2.0.ttf file.');
-  }
-});
 
 // ---------- Code parsing ----------
-
 // Apple gift card codes are 16 uppercase alphanumeric characters.
-// Accept codes with spaces/dashes; we strip them before validation.
+// We accept codes pasted with spaces/dashes and clean them before validation.
 const CODE_RE = /^[A-Z0-9]{16}$/;
 
 function parseCodes(raw) {
@@ -113,12 +78,12 @@ function renderCards() {
     node.className = 'gift-card';
     node.dataset.id = card.id;
 
-    // Format the human-readable version as XXXX XXXX XXXX XXXX for easier reading.
+    // Human-friendly readable form: XXXX XXXX XXXX XXXX
     const readable = card.code.match(/.{1,4}/g).join(' ');
 
     node.innerHTML = `
       <div class="card-header">
-        <span class="card-label">Scan with iPad camera</span>
+        <span class="card-label">Scan with your iPhone or iPad camera</span>
         <button type="button" class="card-remove" aria-label="Remove this card">&times;</button>
       </div>
       <div class="scan-box">
@@ -207,9 +172,8 @@ el.generateBtn.addEventListener('click', () => {
   }
 
   if (added > 0) {
-    // Scroll the first new card into view for the user.
-    const firstNew = el.cardsArea.querySelector('.gift-card:last-child');
-    firstNew?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const lastCard = el.cardsArea.querySelector('.gift-card:last-child');
+    lastCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 });
 
@@ -218,7 +182,7 @@ el.clearBtn.addEventListener('click', () => {
   renderCards();
 });
 
-// Allow Cmd/Ctrl+Enter to submit from the textarea.
+// Cmd/Ctrl+Enter from the textarea submits.
 el.codesInput.addEventListener('keydown', (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
     event.preventDefault();
@@ -226,5 +190,4 @@ el.codesInput.addEventListener('keydown', (event) => {
   }
 });
 
-// Kick off font loading immediately.
 loadScancardium();
