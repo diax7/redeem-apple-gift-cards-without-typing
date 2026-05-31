@@ -201,9 +201,9 @@ body {
 
 .card-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  margin-bottom: 22px;
+  margin-bottom: 8px;
 }
 
 .card-label {
@@ -249,7 +249,6 @@ body {
   margin-top: 24px;
   padding-top: 20px;
   border-top: 1px solid var(--border);
-  flex-wrap: wrap;
   gap: 12px;
 }
 
@@ -363,10 +362,12 @@ body {
   .page { padding: 32px 16px 60px; }
   .title { font-size: 30px; }
   .subtitle { font-size: 17px; }
-  .input-card, .gift-card, .instructions { padding: 24px; }
-  .scan-box {
-    font-size: 38px;
-    padding: 28px 0 22px 0;
-    letter-spacing: 1.5px;
-  }
+  .input-card, .gift-card, .instructions { padding: 20px; }
+  .gift-card { padding-top: 12px; }
+  .card-header { margin-bottom: 4px; }
+  .readable-code { font-size: 14px; letter-spacing: 0.05em; }
+  .copy-btn { padding: 6px 14px; font-size: 13px; }
+  .card-footer { margin-top: 16px; padding-top: 14px; }
+  .footer { font-size: 12px; }
+  .disclaimer { font-size: 12px; }
 }

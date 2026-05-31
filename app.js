@@ -206,7 +206,6 @@ function renderCards() {
     const header = document.createElement('div');
     header.className = 'card-header';
     header.innerHTML = `
-      <span class="card-label"></span>
       <button type="button" class="card-remove" aria-label="Remove this card">&times;</button>
     `;
 
