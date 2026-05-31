@@ -1,13 +1,6 @@
-// Redeem Apple Gift Cards Without Typing — client-side app.
-// Every card is rendered as a plain <input> element styled to match
-// hughmandeville/homekit_code's working HomeKit scan helper. That exact
-// CSS has been verified to scan correctly with the iPhone/iPad camera —
-// the only change is the width (420px → 600px) so a 16-character gift
-// card code fits. Nothing fancy: no canvas, no SVG, no custom rendering.
-
 const state = {
   fontReady: false,
-  cards: [], // { id, code }
+  cards: [],
 };
 
 const el = {
@@ -19,13 +12,6 @@ const el = {
   toast: document.getElementById('toast'),
 };
 
-// ---------- Font loading ----------
-// Scancardium is loaded via @font-face in styles.css. We also explicitly
-// wait for it through the FontFace API so we only enable the Generate
-// button once the font is actually parsed and ready — without this, the
-// first rendered card could briefly use a fallback font and the OCR would
-// fail to recognise it.
-
 async function waitForFont() {
   try {
     await document.fonts.load('52px "Scancardium"');
@@ -33,19 +19,16 @@ async function waitForFont() {
       state.fontReady = true;
       el.generateBtn.disabled = false;
     } else {
-      throw new Error('Scancardium did not become available after load().');
+      throw new Error('Scancardium did not become available.');
     }
   } catch (err) {
     console.error('Scancardium failed to load:', err);
     el.validationError.hidden = false;
     el.validationError.textContent =
-      'Couldn\u2019t load the Scancardium font. The scanner will not recognise these cards without it. Please reload the page.';
+      'Couldn’t load the Scancardium font. The scanner will not recognise these cards without it. Please reload the page.';
   }
 }
 
-// ---------- Code parsing ----------
-// Apple gift card codes are 16 alphanumeric characters. We accept codes
-// pasted with spaces or dashes and strip them before validating.
 const CODE_RE = /^[A-Z0-9]{16}$/;
 
 function parseCodes(raw) {
@@ -63,7 +46,146 @@ function parseCodes(raw) {
   return { valid, invalid };
 }
 
-// ---------- Card rendering ----------
+function buildCardSvg(code) {
+  const cardW = 900;
+  const cardH = 580;
+  const ns = 'http://www.w3.org/2000/svg';
+
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('class', 'scan-box');
+  svg.setAttribute('xmlns', ns);
+  svg.setAttribute('width', cardW);
+  svg.setAttribute('height', cardH);
+  svg.setAttribute('viewBox', `0 0 ${cardW} ${cardH}`);
+
+  const bg = document.createElementNS(ns, 'rect');
+  bg.setAttribute('width', cardW);
+  bg.setAttribute('height', cardH);
+  bg.setAttribute('rx', 32);
+  bg.setAttribute('fill', '#ffffff');
+  svg.appendChild(bg);
+
+  const apple = document.createElementNS(ns, 'path');
+  apple.setAttribute(
+    'transform',
+    `translate(${cardW / 2 - 36}, 20) scale(3)`
+  );
+  apple.setAttribute(
+    'd',
+    'M17.05 20.28c-.98.95-2.05.88-3.08.41-1.09-.47-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.41C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z'
+  );
+  apple.setAttribute('fill', '#1d1d1f');
+  svg.appendChild(apple);
+
+  const title = document.createElementNS(ns, 'text');
+  title.setAttribute('x', cardW / 2);
+  title.setAttribute('y', 130);
+  title.setAttribute('text-anchor', 'middle');
+  title.setAttribute('font-family', '-apple-system, Helvetica Neue, Arial');
+  title.setAttribute('font-size', 42);
+  title.setAttribute('font-weight', '600');
+  title.setAttribute('fill', '#1d1d1f');
+  title.textContent = 'Gift Card';
+  svg.appendChild(title);
+
+  const subtitle = document.createElementNS(ns, 'text');
+  subtitle.setAttribute('x', cardW / 2);
+  subtitle.setAttribute('y', 170);
+  subtitle.setAttribute('text-anchor', 'middle');
+  subtitle.setAttribute(
+    'font-family',
+    '-apple-system, Helvetica Neue, Arial'
+  );
+  subtitle.setAttribute('font-size', 20);
+  subtitle.setAttribute('fill', '#6e6e73');
+  subtitle.textContent = 'For all things Apple.';
+  svg.appendChild(subtitle);
+
+  const body1 = document.createElementNS(ns, 'text');
+  body1.setAttribute('x', cardW / 2);
+  body1.setAttribute('y', 250);
+  body1.setAttribute('text-anchor', 'middle');
+  body1.setAttribute(
+    'font-family',
+    '-apple-system, Helvetica Neue, Arial'
+  );
+  body1.setAttribute('font-size', 14);
+  body1.setAttribute('fill', '#86868b');
+  body1.textContent =
+    'Use this card to shop the App Store, Apple TV, Apple Music,';
+  svg.appendChild(body1);
+
+  const body2 = document.createElementNS(ns, 'text');
+  body2.setAttribute('x', cardW / 2);
+  body2.setAttribute('y', 272);
+  body2.setAttribute('text-anchor', 'middle');
+  body2.setAttribute(
+    'font-family',
+    '-apple-system, Helvetica Neue, Arial'
+  );
+  body2.setAttribute('font-size', 14);
+  body2.setAttribute('fill', '#86868b');
+  body2.textContent =
+    'iTunes, Apple Books, Apple Arcade, iCloud+, and more.';
+  svg.appendChild(body2);
+
+  const boxH = 140;
+  const boxW = boxH * 4;
+  const boxX = (cardW - boxW) / 2;
+  const boxY = 315;
+  const borderW = Math.round(boxH * 0.045);
+
+  const border = document.createElementNS(ns, 'path');
+  border.setAttribute(
+    'd',
+    `M${boxX},${boxY} h${boxW} v${boxH} h${-boxW} Z`
+  );
+  border.setAttribute('fill', 'none');
+  border.setAttribute('stroke', '#000000');
+  border.setAttribute('stroke-width', borderW);
+  border.setAttribute('stroke-linejoin', 'round');
+  svg.appendChild(border);
+
+  const boxBg = document.createElementNS(ns, 'rect');
+  boxBg.setAttribute('x', boxX + borderW / 2);
+  boxBg.setAttribute('y', boxY + borderW / 2);
+  boxBg.setAttribute('width', boxW - borderW);
+  boxBg.setAttribute('height', boxH - borderW);
+  boxBg.setAttribute('fill', '#ffffff');
+  svg.insertBefore(boxBg, border);
+
+  const fontSize = Math.round(boxH * 0.34);
+  const codeText = document.createElementNS(ns, 'text');
+  codeText.setAttribute('x', cardW / 2);
+  codeText.setAttribute('y', boxY + boxH / 2 + fontSize * 0.35);
+  codeText.setAttribute('text-anchor', 'middle');
+  codeText.setAttribute('font-family', 'Scancardium, monospace');
+  codeText.setAttribute('font-size', fontSize);
+  codeText.setAttribute('font-weight', '500');
+  codeText.setAttribute('letter-spacing', '2');
+  codeText.setAttribute('fill', '#000000');
+  codeText.textContent = code;
+  svg.appendChild(codeText);
+
+  const serial = 'GCA' + Array.from(
+    { length: 13 },
+    () => Math.floor(Math.random() * 10)
+  ).join('');
+  const serialText = document.createElementNS(ns, 'text');
+  serialText.setAttribute('x', cardW / 2);
+  serialText.setAttribute('y', boxY + boxH + 40);
+  serialText.setAttribute('text-anchor', 'middle');
+  serialText.setAttribute(
+    'font-family',
+    '-apple-system, Helvetica Neue, Arial'
+  );
+  serialText.setAttribute('font-size', 11);
+  serialText.setAttribute('fill', '#86868b');
+  serialText.textContent = serial;
+  svg.appendChild(serialText);
+
+  return svg;
+}
 
 function renderCards() {
   el.cardsArea.innerHTML = '';
@@ -88,17 +210,7 @@ function renderCards() {
       <button type="button" class="card-remove" aria-label="Remove this card">&times;</button>
     `;
 
-    // The actual scannable element — a plain <input> exactly like
-    // hughmandeville's working implementation.
-    const scan = document.createElement('input');
-    scan.type = 'text';
-    scan.className = 'scan-box';
-    scan.value = card.code;
-    scan.readOnly = true;
-    scan.setAttribute('aria-label', `Scannable code ${card.code}`);
-    // Select all on click so the user can copy the code manually if
-    // they don't want to use the Copy button.
-    scan.addEventListener('click', () => scan.select());
+    const svg = buildCardSvg(card.code);
 
     const footer = document.createElement('div');
     footer.className = 'card-footer';
@@ -112,30 +224,30 @@ function renderCards() {
       renderCards();
     });
 
-    footer.querySelector('.copy-btn').addEventListener('click', async (event) => {
-      try {
-        await navigator.clipboard.writeText(card.code);
-        const btn = event.currentTarget;
-        btn.textContent = 'Copied';
-        btn.classList.add('copied');
-        showToast('Code copied to clipboard');
-        setTimeout(() => {
-          btn.textContent = 'Copy code';
-          btn.classList.remove('copied');
-        }, 1800);
-      } catch {
-        showToast('Couldn\u2019t copy — select and copy manually');
-      }
-    });
+    footer
+      .querySelector('.copy-btn')
+      .addEventListener('click', async (event) => {
+        try {
+          await navigator.clipboard.writeText(card.code);
+          const btn = event.currentTarget;
+          btn.textContent = 'Copied';
+          btn.classList.add('copied');
+          showToast('Code copied to clipboard');
+          setTimeout(() => {
+            btn.textContent = 'Copy code';
+            btn.classList.remove('copied');
+          }, 1800);
+        } catch {
+          showToast('Couldn’t copy — select and copy manually');
+        }
+      });
 
     node.appendChild(header);
-    node.appendChild(scan);
+    node.appendChild(svg);
     node.appendChild(footer);
     el.cardsArea.appendChild(node);
   }
 }
-
-// ---------- Toast ----------
 
 let toastTimer = null;
 function showToast(message) {
@@ -144,8 +256,6 @@ function showToast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.toast.classList.remove('show'), 2200);
 }
-
-// ---------- Input wiring ----------
 
 el.generateBtn.addEventListener('click', () => {
   if (!state.fontReady) return;

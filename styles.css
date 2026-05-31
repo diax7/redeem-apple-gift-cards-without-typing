@@ -234,39 +234,13 @@ body {
   color: var(--error);
 }
 
-/* The scannable box.
-   This is a nearly-verbatim copy of hughmandeville/homekit_code's CSS for
-   their working HomeKit scan helper — the only change is width 420 → 600
-   so a 16-character gift card code fits. That exact value was verified by
-   hand to scan correctly with an iPhone/iPad camera. Do NOT tweak the
-   font-size, letter-spacing, padding or border values without re-testing. */
 .scan-box {
   display: block;
-  background: #ffffff;
-  font-size: 52px;
-  padding: 40px 0 30px 0;
-  letter-spacing: 2px;
-  border: 4px solid #000000;
-  width: 600px;
-  max-width: 100%;
-  text-align: center;
-  color: #000000;
-  font-weight: 500;
-  font-family: 'Scancardium', 'Inconsolata', monospace;
+  width: 100%;
+  max-width: 900px;
+  height: auto;
   margin: 0 auto;
-  /* Disable form-control aesthetics the browser applies to <input> */
-  appearance: none;
-  -webkit-appearance: none;
-  border-radius: 0;
-  outline: none;
-  box-shadow: none;
-  /* Crisp black text — override the page-wide antialiased smoothing
-     which can make the scannable glyphs appear faint. */
-  -webkit-font-smoothing: auto;
-  -moz-osx-font-smoothing: auto;
 }
-
-.scan-box:focus { outline: none; }
 
 .card-footer {
   display: flex;
